@@ -1,2 +1,2 @@
-# jusi_device_rts
-JUSI Device RTS (Real Time Signaling) Server
+# jusi_device_wss
+JUSI Device WebSocket Server
