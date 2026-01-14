@@ -65,7 +65,7 @@ class ConnectionManager:
         """连接 Redis"""
         try:
             self.redis_client = redis.from_url(
-                settings.REDIS_URL,
+                settings.redis_url,
                 decode_responses=True
             )
             await self.redis_client.ping()
@@ -92,7 +92,7 @@ class ConnectionManager:
             for device_id, status in list(self.device_status.items()):
                 if status.last_heartbeat:
                     time_diff = now - status.last_heartbeat
-                    if time_diff > timedelta(seconds=settings.HEARTBEAT_TIMEOUT):
+                    if time_diff > timedelta(seconds=settings.heartbeat_timeout):
                         logger.warning(f"设备 {device_id} 心跳超时")
                         timeout_devices.append(device_id)
             

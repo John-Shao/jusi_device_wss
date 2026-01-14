@@ -170,7 +170,7 @@ class DeviceMessageHandler:
             
             # 生成 RTMP 地址（这里使用配置的服务器地址）
             stream_id = f"{device_status.device_sn}_{device_status.device_id}"
-            rtmp_url = f"rtmp://{settings.VIDEO_RTMP_HOST}:{settings.VIDEO_RTMP_PORT}/live/{stream_id}"
+            rtmp_url = f"rtmp://{settings.video_rtmp_host}:{settings.video_rtmp_port}/live/{stream_id}"
             
             # 获取设备信息中的分辨率等设置
             device_info = manager.get_device_info(connection_id)
@@ -211,7 +211,7 @@ class DeviceMessageHandler:
             
             # 这里应该返回实际的上传地址
             # 示例中使用一个固定的上传端点
-            upload_url = f"https://{settings.HOST}/api/upload/screenshot"
+            upload_url = f"https://{settings.host}/api/upload/screenshot"
             
             return {
                 "type": "device_notify",

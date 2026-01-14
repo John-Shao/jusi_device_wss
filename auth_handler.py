@@ -11,7 +11,7 @@ class DeviceAuthenticator:
     """设备认证器"""
     
     def __init__(self):
-        self.secret_key = settings.SECRET_KEY
+        self.secret_key = settings.secret_key
         self.algorithm = "HS256"
     
     def generate_device_token(
@@ -82,7 +82,7 @@ async def authenticate_device(
 ) -> bool:
     """认证设备"""
     # 如果未配置 SECRET_KEY，跳过认证（仅用于开发）
-    if not settings.SECRET_KEY or settings.SECRET_KEY == "your-secret-key-here":
+    if not settings.secret_key or settings.secret_key == "your-secret-key-here":
         logger.warning("未配置 SECRET_KEY，跳过设备认证")
         return True
     

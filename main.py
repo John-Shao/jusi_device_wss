@@ -10,7 +10,7 @@ import uvicorn
 
 
 # 配置日志
-log_level=logging.DEBUG if settings.DEBUG else logging.WARNING
+log_level=logging.DEBUG if settings.debug else logging.WARNING
 
 logging.basicConfig(
     level=log_level,
@@ -24,7 +24,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """应用生命周期事件"""
 
     # 启动事件
-    logger.info(f"启动 {settings.APP_NAME} v{settings.APP_VERSION}")
+    logger.info(f"启动 {settings.app_name} v{settings.app_version}")
     
     # 连接 Redis
     #await manager.connect_redis()
@@ -47,10 +47,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 # 创建 FastAPI 应用
 app = FastAPI(
-    title=settings.APP_NAME,  # 应用名称
-    version=settings.APP_VERSION,  # API的版本
-    docs_url="/docs" if settings.DEBUG else None,    # 仅在调试模式下启用Swagger UI文档的访问路径
-    redoc_url="/redoc" if settings.DEBUG else None,  # 仅在调试模式下启用ReDoc文档的访问路径
+    title=settings.app_name,  # 应用名称
+    version=settings.app_version,  # API的版本
+    docs_url="/docs" if settings.debug else None,    # 仅在调试模式下启用Swagger UI文档的访问路径
+    redoc_url="/redoc" if settings.debug else None,  # 仅在调试模式下启用ReDoc文档的访问路径
     lifespan=lifespan  # 定义一个 lifespan 函数来处理应用启动时和关闭时需要执行的代码，如连接和断开数据库，启动和停止心跳监控任务等
 )
 
@@ -80,11 +80,11 @@ async def root():
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",
-        host=settings.HOST,
-        port=settings.PORT,
-        reload=settings.DEBUG,
+        host=settings.host,
+        port=settings.port,
+        reload=settings.debug,
         reload_dirs=["."],
-        ws_ping_interval=settings.WEBSOCKET_PING_INTERVAL,
-        ws_ping_timeout=settings.WEBSOCKET_PING_TIMEOUT,
+        ws_ping_interval=settings.websocket_ping_interval,
+        ws_ping_timeout=settings.websocket_ping_timeout,
         log_level=log_level
     )
