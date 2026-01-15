@@ -6,8 +6,6 @@ class Settings(BaseSettings):
     video_rtmp_host: str  # 接收X5设备推送视频流的RTMP服务器地址
     video_rtmp_port: int  # 接收X5设备推送视频流的RTMP服务器端口
     drift_api_prefix: str = "/api/ws/v1"  # DriftSee API 前缀
-
-
     
     # 服务器配置
     app_name: str = "JUSI Device WebSocket Server"
@@ -20,9 +18,6 @@ class Settings(BaseSettings):
     websocket_ping_interval: int = 20  # 秒
     websocket_ping_timeout: int = 30   # 秒
     heartbeat_timeout: int = 180       # 3分钟心跳超时
-    
-    # 安全配置
-    secret_key: str = "your-secret-key-here"
     
     # 数据库/缓存配置
     redis_url: str = "redis://jusi:jusi2025@172.18.245.192:6379"  # 测试环境 172.18.245.192

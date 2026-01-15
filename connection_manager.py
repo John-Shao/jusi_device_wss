@@ -1,6 +1,7 @@
 import json
 import asyncio
 import logging
+from math import e
 from typing import Dict, Set, Optional, List
 from datetime import datetime, timedelta
 from fastapi import WebSocket
@@ -126,7 +127,7 @@ class ConnectionManager:
             connection_id,
             {
                 "code": 0,
-                "type": MessageType.NOTIFY,
+                "type": MessageType.D2S_NOTIFY,
                 "event": EventType.DEVICE_JOIN,
                 "data": {}
             }
@@ -169,6 +170,8 @@ class ConnectionManager:
         """更新心跳时间"""
         if connection_id in self.device_status:
             self.device_status[connection_id].last_heartbeat = datetime.now()
+        else:
+            logger.error(f"更新心跳时间失败：设备连接 {connection_id} 不存在")
     
     # 发送消息
     async def send_message(self, connection_id: str, message: dict):

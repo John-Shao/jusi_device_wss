@@ -6,11 +6,11 @@ from utils import current_timestamp_s
 
 class MessageType(str, Enum):
     """消息类型枚举"""
-    NOTIFY = "notify"
-    DEVICE_CONTROL = "device_control"
-    CONTROL = "control"
-    DEVICE_NOTIFY = "device_notify"
-    MESSAGE = "message"
+    D2S_NOTIFY = "notify"    # 设备->系统
+    D2S_DEVICE_CONTROL = "device_control"  # 设备->系统
+    S2D_CONTROL = "control"  # 系统->设备
+    S2D_DEVICE_NOTIFY = "device_notify"    # 系统->设备
+    S2D_MESSAGE = "message"  # 系统->设备
 
 class EventType(str, Enum):
     """事件类型枚举"""
@@ -54,8 +54,8 @@ class BaseMessage(BaseModel):
     """基础消息模型"""
     type: MessageType
     event: EventType
-    deviceId: str = None
-    playId: str = None
+    deviceId: str = ""
+    playId: str = ""
     code: Optional[int] = 0
     data: Optional[Dict[str, Any]] = {}
     
@@ -92,30 +92,30 @@ class DeviceStatus(BaseModel):
 
 class DeviceJoinMessage(BaseMessage):
     """设备连接消息"""
-    type: MessageType = MessageType.NOTIFY
+    type: MessageType = MessageType.D2S_NOTIFY
     event: EventType = EventType.DEVICE_JOIN
 
 class HeartbeatMessage(BaseMessage):
     """心跳消息"""
-    type: MessageType = MessageType.NOTIFY
+    type: MessageType = MessageType.D2S_NOTIFY
     event: EventType = EventType.JOIN
 
 class GetRtmpMessage(BaseMessage):
     """获取RTMP地址消息"""
-    type: MessageType = MessageType.DEVICE_CONTROL
+    type: MessageType = MessageType.D2S_DEVICE_CONTROL
     event: EventType = EventType.GET_RTMP
 
 class GetScreenMessage(BaseMessage):
     """获取截图地址消息"""
-    type: MessageType = MessageType.DEVICE_CONTROL
+    type: MessageType = MessageType.D2S_DEVICE_CONTROL
     event: EventType = EventType.GET_SCREEN
 
 class DeviceInfoMessage(BaseMessage):
     """设备信息消息"""
-    type: MessageType = MessageType.NOTIFY
+    type: MessageType = MessageType.D2S_NOTIFY
     event: EventType = EventType.DEVICE_INFO
     data: DeviceInfo
 
 class ControlMessage(BaseMessage):
     """控制消息"""
-    type: MessageType = MessageType.CONTROL
+    type: MessageType = MessageType.S2D_CONTROL

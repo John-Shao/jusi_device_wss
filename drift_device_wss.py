@@ -1,4 +1,4 @@
-
+# Drift 设备 WebSocket 连接端点
 import json
 import logging
 from fastapi import (
@@ -8,7 +8,7 @@ from fastapi import (
     BackgroundTasks,
     )
 from connection_manager import connectionManager
-from drift_message_handler import driftMessageHandler
+from drift_message_handler import handle_device_message
 
 
 logger = logging.getLogger(__name__)
@@ -52,7 +52,7 @@ async def handle_connection_message(
             logger.debug(f"收到消息: {json.dumps(message_data, indent=2, ensure_ascii=False)}")
             
             # 处理消息
-            response = await driftMessageHandler.handle_message(
+            response = await handle_device_message(
                 message_data, connection_id, websocket
             )
             
