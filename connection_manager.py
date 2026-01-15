@@ -9,7 +9,7 @@ import redis.asyncio as redis
 from config import settings
 from models import DeviceInfo
 from models import (
-    ControlMessage, EventType, MessageType
+    EventType, MessageType, DeviceStatus
 )
 
 
@@ -29,13 +29,17 @@ class ConnectionManager:
         self.redis_client = None
         # 心跳监控任务
         self.heartbeat_monitor_task = None
+        # 连接redis缓存
+        self.connect_redis()
 
     def __del__(self):
         """析构函数"""
+        # 断开redis缓存
+        self.disconnect_redis()
+        # 取消心跳监控任务
         if self.heartbeat_monitor_task:
             self.heartbeat_monitor_task.cancel()
         
-    
     # 连接redis缓存
     async def connect_redis(self):
         """连接 Redis"""
@@ -50,6 +54,13 @@ class ConnectionManager:
             logger.error(f"Redis 连接失败: {e}")
             self.redis_client = None
     
+    # 断开redis缓存
+    async def disconnect_redis(self):
+        """断开 Redis 连接"""
+        if self.redis_client:
+            await self.redis_client.close()
+            self.redis_client = None
+            logger.info("Redis 连接已断开")
 
     async def start_heartbeat_monitor(self):
         """启动心跳监控"""
@@ -81,7 +92,10 @@ class ConnectionManager:
     async def connect(
         self,
         websocket: WebSocket,
-        device_id: str
+        room_id: str,
+        device_sn: str,
+        device_id: str, 
+        language: str
         ) -> str:
         """设备连接"""
         await websocket.accept()
@@ -93,10 +107,16 @@ class ConnectionManager:
         self.active_connections[connection_id] = websocket
         
         # 初始化设备状态
+        device_info = DeviceInfo(
+            no=device_sn,
+        )
+
+        # 保存设备状态
         self.device_status[connection_id] = DeviceStatus(
             device_id=device_id,
+            device_info=device_info,
             connection_time=datetime.now(),
-            last_heartbeat=datetime.now()
+            last_heartbeat=datetime.now(),
         )
         
         logger.info(f"设备连接: {connection_id}")
@@ -111,7 +131,6 @@ class ConnectionManager:
                 "data": {}
             }
         )
-        
         return connection_id
     
     # 断开设备连接
@@ -125,6 +144,7 @@ class ConnectionManager:
         if connection_id in self.active_connections:
             try:
                 websocket = self.active_connections[connection_id]
+                # 检查连接状态
                 if websocket.client_state != WebSocketState.DISCONNECTED and websocket.application_state != WebSocketState.DISCONNECTED:
                     await websocket.close(code=code, reason=reason)
             except Exception as e:
@@ -153,49 +173,27 @@ class ConnectionManager:
     # 发送消息
     async def send_message(self, connection_id: str, message: dict):
         """发送消息到指定连接"""
-        logger.debug(f"发送消息: {json.dumps(message, indent=2)}")
+        logger.debug(f"发送消息: {json.dumps(message, indent=2, ensure_ascii=False)}")
         if connection_id in self.active_connections:
             try:
                 websocket = self.active_connections[connection_id]
                 await websocket.send_json(message)
-                return True
             except Exception as e:
                 logger.error(f"发送消息失败: {e}")
                 await self.disconnect(connection_id)
-        return False
-    
-    # 获取设备连接
-    async def get_device_connection(self, device_id: str) -> Optional[str]:
-        """根据设备ID获取连接ID"""
-        for connection_id, status in self.device_status.items():
-            if status.device_id == device_id:
-                return connection_id
-        return None
     
     # 获取设备信息
     def get_device_info(self, connection_id: str) -> Optional[DeviceInfo]:
         """获取设备信息"""
-        if connection_id in self.device_status:
-            return self.device_status[connection_id].device_info
-        return None
+        return self.device_status[connection_id].device_info if connection_id in self.device_status else None
     
     # 更新设备信息
     def update_device_info(self, connection_id: str, device_info: DeviceInfo):
         """更新设备信息"""
         if connection_id in self.device_status:
             self.device_status[connection_id].device_info = device_info
-    
-    # 获取在线设备列表
-    def get_online_devices(self) -> List[str]:
-        """获取在线设备列表"""
-        devices = []
-        for connection_id, status in self.device_status.items():
-            devices.append({
-                "device_id": status.device_id,
-                "connected_at": status.connection_time.isoformat(),
-                "last_heartbeat": status.last_heartbeat.isoformat()
-            })
-        return devices
+        else:
+            logger.error(f"更新设备信息失败：设备连接 {connection_id} 不存在")
 
 
 # 全局连接管理器

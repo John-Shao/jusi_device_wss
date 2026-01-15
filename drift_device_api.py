@@ -16,8 +16,11 @@ drift_router = APIRouter()
 # /api/ws/v1/manyRoom/f2374f8400a763e03e35745d71b01275/74TNABDGNAA0YW01/device/00a4b5697e3d16796b818d656ccea433/zh-CN
 @drift_router.websocket("/manyRoom/{room_id}/{device_sn}/device/{device_id}/{language}")
 async def drift_websocket(
+    room_id: str,
+    device_sn: str,
     websocket: WebSocket,
     device_id: str,
+    language: str = "zh-CN"
     ):
     """Drift 设备 WebSocket 连接端点"""
     '''
@@ -29,7 +32,7 @@ async def drift_websocket(
     '''
 
     # 建立连接
-    connection_id = await connectionManager.connect(websocket, device_id)
+    connection_id = await connectionManager.connect(websocket, room_id, device_sn, device_id, language)
     
     try:
         while True:

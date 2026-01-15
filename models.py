@@ -1,6 +1,8 @@
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional, Dict, Any
 from enum import Enum
+from utils import current_timestamp_s
+
 
 class MessageType(str, Enum):
     """消息类型枚举"""
@@ -64,7 +66,7 @@ class BaseMessage(BaseModel):
 
 class DeviceInfo(BaseModel):
     """设备信息模型"""
-    no: str = Field(..., description="device_sn")
+    no: str = Field("", description="device_sn")
     dzoom: int = Field(1, description="缩放状态（1-正常，其他值按设备定义）")
     rtmp: str = Field("stop", description="推流状态（start/stop）")
     rtmp_url: str = Field("", description="RTMP推流地址")
@@ -82,10 +84,10 @@ class DeviceInfo(BaseModel):
 
 class DeviceStatus(BaseModel):
     """设备状态模型"""
-    device_id: str = Field(..., description="设备ID")
+    device_id: str = Field("", description="设备ID")
     device_info: Optional[DeviceInfo] = None  # 设备信息
-    connection_time: str = Field(..., description="连接时间")
-    last_heartbeat: str = Field(..., description="最后心跳时间")
+    connection_time: str = Field(current_timestamp_s(), description="连接时间")
+    last_heartbeat: str = Field(current_timestamp_s(), description="最后心跳时间")
 
 class DeviceJoinMessage(BaseMessage):
     """设备连接消息"""
