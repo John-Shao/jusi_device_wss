@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     app_name: str = "JUSI Device WebSocket Server"
     app_version: str = "1.5.0"
     host: str = "0.0.0.0"
-    port: int = 9000  # WebSocket端点与HTTP API端点共用同一端口
+    port: int = 9001  # WebSocket端点与HTTP API端点共用同一端口
     debug: bool = True
     
     # WebSocket 配置

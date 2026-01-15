@@ -31,12 +31,12 @@ class ConnectionManager:
         # 心跳监控任务
         self.heartbeat_monitor_task = None
         # 连接redis缓存
-        self.connect_redis()
+        # self.connect_redis()
 
     def __del__(self):
         """析构函数"""
         # 断开redis缓存
-        self.disconnect_redis()
+        # self.disconnect_redis()
         # 取消心跳监控任务
         if self.heartbeat_monitor_task:
             self.heartbeat_monitor_task.cancel()
@@ -63,6 +63,7 @@ class ConnectionManager:
             self.redis_client = None
             logger.info("Redis 连接已断开")
 
+    # TODO：使用Redis过期时间来监控心跳
     async def start_heartbeat_monitor(self):
         """启动心跳监控"""
         self.heartbeat_monitor_task = asyncio.create_task(
