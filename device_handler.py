@@ -169,7 +169,7 @@ class DeviceMessageHandler:
                 raise ValueError("设备未连接")
             
             # 生成 RTMP 地址（这里使用配置的服务器地址）
-            stream_id = f"{device_status.device_sn}_{device_status.device_id}"
+            stream_id = device_status.device_id
             rtmp_url = f"rtmp://{settings.video_rtmp_host}:{settings.video_rtmp_port}/live/{stream_id}"
             
             # 获取设备信息中的分辨率等设置
@@ -222,7 +222,6 @@ class DeviceMessageHandler:
                     "screenName": "",
                     "deviceId": message.deviceId,
                     "url": upload_url,
-                    "roomId": device_status.room_id,
                     "fileBase64": ""
                 }
             }

@@ -16,51 +16,27 @@ from models import (
 logger = logging.getLogger(__name__)
 
 '''
-设备状态信息类
-'''
-class DeviceStatus:
-    """设备状态"""
-    
-    def __init__(
-        self,
-        room_id: str,
-        device_sn: str,
-        device_id: str,
-        connection_time: datetime,
-        last_heartbeat: datetime
-        ):
-        
-        self.room_id = room_id
-        self.device_sn = device_sn
-        self.device_id = device_id
-        self.connection_time = connection_time  # 连接时间
-        self.last_heartbeat = last_heartbeat  # 最后心跳时间
-        self.device_info: Optional[DeviceInfo] = None  # 设备信息
-        self.video_pushing = False  # 是否正在推流
-        self.audio_pulling = False  # 是否正在拉流
-        self.recording = False  # 是否正在录像
-        self.rtmp_url: Optional[str] = None  # RTMP 推流地址
-        self.rtsp_url: Optional[str] = None  # RTSP 拉流地址
-
-'''
-设备连接管理器类
+设备WebSocket连接管理器类
 '''
 class ConnectionManager:
-    """WebSocket 连接管理器"""
-    
+    # 构造函数
     def __init__(self):
         # 活跃连接
         self.active_connections: Dict[str, WebSocket] = {}
         # 设备状态
         self.device_status: Dict[str, DeviceStatus] = {}
-        # 房间-设备映射
-        self.room_devices: Dict[str, Set[str]] = {}
-        # Redis 客户端
+        # Redis客户端
         self.redis_client = None
         # 心跳监控任务
         self.heartbeat_monitor_task = None
+
+    def __del__(self):
+        """析构函数"""
+        if self.heartbeat_monitor_task:
+            self.heartbeat_monitor_task.cancel()
+        
     
-    # 连接缓存
+    # 连接redis缓存
     async def connect_redis(self):
         """连接 Redis"""
         try:
@@ -74,6 +50,7 @@ class ConnectionManager:
             logger.error(f"Redis 连接失败: {e}")
             self.redis_client = None
     
+
     async def start_heartbeat_monitor(self):
         """启动心跳监控"""
         self.heartbeat_monitor_task = asyncio.create_task(
@@ -104,33 +81,23 @@ class ConnectionManager:
     async def connect(
         self,
         websocket: WebSocket,
-        room_id: str,
-        device_sn: str,
         device_id: str
         ) -> str:
         """设备连接"""
         await websocket.accept()
         
         # 生成连接ID
-        connection_id = device_id  # f"{room_id}:{device_sn}:{device_id}"
+        connection_id = device_id
         
         # 保存连接
         self.active_connections[connection_id] = websocket
         
         # 初始化设备状态
         self.device_status[connection_id] = DeviceStatus(
-            room_id=room_id,
-            device_sn=device_sn,
             device_id=device_id,
             connection_time=datetime.now(),
             last_heartbeat=datetime.now()
         )
-        
-        # 更新"房间-设备"映射
-        if room_id not in self.room_devices:
-            self.room_devices[room_id] = set()
-
-        self.room_devices[room_id].add(connection_id)
         
         logger.info(f"设备连接: {connection_id}")
         
@@ -173,11 +140,6 @@ class ConnectionManager:
             del self.active_connections[connection_id]
         
         if connection_id in self.device_status:
-            # 从房间映射中移除
-            status = self.device_status[connection_id]
-            if status.room_id in self.room_devices:
-                self.room_devices[status.room_id].discard(connection_id)
-            
             del self.device_status[connection_id]
         
         logger.info(f"连接清理完成: {connection_id}")
@@ -202,13 +164,6 @@ class ConnectionManager:
                 await self.disconnect(connection_id)
         return False
     
-    # 广播消息
-    async def broadcast_to_room(self, room_id: str, message: dict):
-        """广播消息到房间所有设备"""
-        if room_id in self.room_devices:
-            for connection_id in list(self.room_devices[room_id]):
-                await self.send_message(connection_id, message)
-    
     # 获取设备连接
     async def get_device_connection(self, device_id: str) -> Optional[str]:
         """根据设备ID获取连接ID"""
@@ -231,21 +186,17 @@ class ConnectionManager:
             self.device_status[connection_id].device_info = device_info
     
     # 获取在线设备列表
-    def get_online_devices(self, room_id: Optional[str] = None) -> List[str]:
+    def get_online_devices(self) -> List[str]:
         """获取在线设备列表"""
         devices = []
         for connection_id, status in self.device_status.items():
-            if not room_id or status.room_id == room_id:
-                devices.append({
-                    "device_id": status.device_id,
-                    "device_sn": status.device_sn,
-                    "room_id": status.room_id,
-                    "connected_at": status.connection_time.isoformat(),
-                    "last_heartbeat": status.last_heartbeat.isoformat()
-                })
+            devices.append({
+                "device_id": status.device_id,
+                "connected_at": status.connection_time.isoformat(),
+                "last_heartbeat": status.last_heartbeat.isoformat()
+            })
         return devices
 
-'''
-全局连接管理器
-'''
+
+# 全局连接管理器
 connectionManager = ConnectionManager()

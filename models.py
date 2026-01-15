@@ -64,7 +64,7 @@ class BaseMessage(BaseModel):
 
 class DeviceInfo(BaseModel):
     """设备信息模型"""
-    no: str = Field(..., description="设备序列号SN")
+    no: str = Field(..., description="device_sn")
     dzoom: int = Field(1, description="缩放状态（1-正常，其他值按设备定义）")
     rtmp: str = Field("stop", description="推流状态（start/stop）")
     rtmp_url: str = Field("", description="RTMP推流地址")
@@ -79,18 +79,13 @@ class DeviceInfo(BaseModel):
     filter: int = Field(0, description="滤镜模式（0-正常，1-鲜艳，2-低光）")
     mic_sensitivity: int = Field(3, description="麦克风灵敏度（0-5）")
     fov: int = Field(140, description="镜头角度（140/110/90）")
-    
-    @field_validator('stream_res')
-    def validate_resolution(cls, v):
-        if v not in [r.value for r in Resolution]:
-            raise ValueError(f'不支持的分辨率: {v}')
-        return v
-    
-    @field_validator('stream_bitrate')
-    def validate_bitrate(cls, v):
-        if v > 4000000:  # 32Mbps
-            raise ValueError('比特率不能超过4000000（32Mbps）')
-        return v
+
+class DeviceStatus(BaseModel):
+    """设备状态模型"""
+    device_id: str = Field(..., description="设备ID")
+    device_info: Optional[DeviceInfo] = None  # 设备信息
+    connection_time: str = Field(..., description="连接时间")
+    last_heartbeat: str = Field(..., description="最后心跳时间")
 
 class DeviceJoinMessage(BaseMessage):
     """设备连接消息"""

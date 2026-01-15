@@ -49,8 +49,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(
     title=settings.app_name,  # 应用名称
     version=settings.app_version,  # API的版本
-    docs_url="/docs" if settings.debug else None,    # 仅在调试模式下启用Swagger UI文档的访问路径
-    redoc_url="/redoc" if settings.debug else None,  # 仅在调试模式下启用ReDoc文档的访问路径
     lifespan=lifespan  # 定义一个 lifespan 函数来处理应用启动时和关闭时需要执行的代码，如连接和断开数据库，启动和停止心跳监控任务等
 )
 

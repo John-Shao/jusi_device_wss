@@ -17,15 +17,11 @@ class DeviceAuthenticator:
     def generate_device_token(
         self,
         device_id: str,
-        device_sn: str,
-        room_id: str,
         expires_hours: int = 24
     ) -> str:
         """生成设备 token"""
         payload = {
             "device_id": device_id,
-            "device_sn": device_sn,
-            "room_id": room_id,
             "exp": datetime.now(datetime.timezone.utc) + timedelta(hours=expires_hours),
             "iat": datetime.now(datetime.timezone.utc),
             "type": "device"
@@ -38,8 +34,6 @@ class DeviceAuthenticator:
         self,
         token: str,
         device_id: str,
-        device_sn: str,
-        room_id: str
     ) -> bool:
         """验证 token"""
         try:
@@ -51,12 +45,6 @@ class DeviceAuthenticator:
             
             # 验证字段
             if payload.get("device_id") != device_id:
-                return False
-            
-            if payload.get("device_sn") != device_sn:
-                return False
-            
-            if payload.get("room_id") != room_id:
                 return False
             
             if payload.get("type") != "device":
@@ -77,8 +65,6 @@ class DeviceAuthenticator:
 async def authenticate_device(
     token: Optional[str],
     device_id: str,
-    device_sn: str,
-    room_id: str
 ) -> bool:
     """认证设备"""
     # 如果未配置 SECRET_KEY，跳过认证（仅用于开发）
@@ -91,6 +77,4 @@ async def authenticate_device(
         return False
     
     authenticator = DeviceAuthenticator()
-    return await authenticator.verify_token(
-        token, device_id, device_sn, room_id
-    )
+    return await authenticator.verify_token(token, device_id)

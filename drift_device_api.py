@@ -17,22 +17,19 @@ drift_router = APIRouter()
 @drift_router.websocket("/manyRoom/{room_id}/{device_sn}/device/{device_id}/{language}")
 async def drift_websocket(
     websocket: WebSocket,
-    room_id: str,
-    device_sn: str,
     device_id: str,
-    language: Optional[str] = None
     ):
     """Drift 设备 WebSocket 连接端点"""
     '''
     # 设备认证
-    is_authenticated = await authenticate_device(token, device_id, device_sn, room_id)
+    is_authenticated = await authenticate_device(token, device_id)
     if not is_authenticated:
         await websocket.close(code=1008, reason="认证失败")
         return
     '''
 
     # 建立连接
-    connection_id = await connectionManager.connect(websocket, room_id, device_sn, device_id)
+    connection_id = await connectionManager.connect(websocket, device_id)
     
     try:
         while True:

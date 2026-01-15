@@ -12,10 +12,9 @@ async def upload_screenshot(upload_data: Dict[str, Any]) -> Dict[str, Any]:
         screen_name = upload_data.get("screenName", "")
         device_id = upload_data.get("deviceId")
         url = upload_data.get("url")
-        room_id = upload_data.get("roomId")
         file_base64 = upload_data.get("fileBase64", "")
         
-        if not all([device_id, url, room_id, file_base64]):
+        if not all([device_id, url, file_base64]):
             raise ValueError("缺少必要参数")
         
         # 如果 screen_name 为空，生成一个
@@ -27,7 +26,6 @@ async def upload_screenshot(upload_data: Dict[str, Any]) -> Dict[str, Any]:
         payload = {
             "screenName": screen_name,
             "deviceId": device_id,
-            "roomId": room_id,
             "fileBase64": file_base64
         }
         
