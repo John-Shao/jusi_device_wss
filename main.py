@@ -4,10 +4,10 @@ from typing import AsyncGenerator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from config import settings
-from log_mw import RequestLoggingMiddleware
 from connection_manager import connectionManager
 from drift_websocket_server import drift_websocket_router
 from drift_control_server import drift_cloudctrl_router
+from cloud_monitor_server import cloud_monitor_router
 import uvicorn
 
 
@@ -68,12 +68,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 添加Log中间件
-app.add_middleware(RequestLoggingMiddleware)
-
 # 注册路由
 app.include_router(drift_websocket_router, prefix=settings.drift_wss_prefix, tags=["Drift WebSocket Server"])
 app.include_router(drift_cloudctrl_router, prefix=settings.drift_api_prefix, tags=["Drift Cloud Control"])
+app.include_router(cloud_monitor_router, prefix=settings.drift_api_prefix, tags=["Drift Cloud Monitor"])
 
 # 处理根路径请求
 @app.get("/")

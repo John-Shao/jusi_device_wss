@@ -5,7 +5,7 @@ from enum import Enum
 from utils import current_timestamp_s
 
 
-class MessageType(str, Enum):
+class DriftMsgType(str, Enum):
     """消息类型枚举"""
     D2S_NOTIFY = "notify"    # 设备->系统
     D2S_DEVICE_CONTROL = "device_control"  # 设备->系统
@@ -13,7 +13,7 @@ class MessageType(str, Enum):
     S2D_DEVICE_NOTIFY = "device_notify"    # 系统->设备
     S2D_MESSAGE = "message"  # 系统->设备
 
-class EventType(str, Enum):
+class DriftEvent(str, Enum):
     """事件类型枚举"""
     # 设备事件
     JOIN = "join"
@@ -51,21 +51,21 @@ class Resolution(str, Enum):
     RES_WVGA = "WVGA"
 
 # 基础消息格式（设备发送的消息、发送给设备的消息）
-class BaseMessage(BaseModel):
+class DriftMessage(BaseModel):
     """基础消息模型"""
-    type: MessageType
-    event: EventType
+    type: DriftMsgType
+    event: DriftEvent
     deviceId: str = ""
-    playId: str = ""
-    code: Optional[int] = 0
+    playId: Optional[str] = ""
     data: Optional[Dict[str, Any]] = {}
-    
+    code: Optional[int] = 0
+
     @field_validator('deviceId')
     def validate_device_id(cls, v):
         if v and len(v) != 32:
             raise ValueError('设备ID必须为32位字符串')
         return v
-
+    
 class DeviceInfo(BaseModel):
     """设备信息模型"""
     no: str = Field("", description="device_sn")
@@ -91,35 +91,37 @@ class DeviceStatus(BaseModel):
     connection_time: int = Field(current_timestamp_s(), description="连接时间")
     last_heartbeat: int = Field(current_timestamp_s(), description="最后心跳时间")
 
-class DeviceJoinMessage(BaseMessage):
+'''
+class DeviceJoinMessage(DriftRequest):
     """设备连接消息"""
     type: MessageType = MessageType.D2S_NOTIFY
     event: EventType = EventType.DEVICE_JOIN
 
-class HeartbeatMessage(BaseMessage):
+class HeartbeatMessage(DriftRequest):
     """心跳消息"""
     type: MessageType = MessageType.D2S_NOTIFY
     event: EventType = EventType.JOIN
 
-class GetRtmpMessage(BaseMessage):
+class GetRtmpMessage(DriftRequest):
     """获取RTMP地址消息"""
     type: MessageType = MessageType.D2S_DEVICE_CONTROL
     event: EventType = EventType.GET_RTMP
 
-class GetScreenMessage(BaseMessage):
+class GetScreenMessage(DriftRequest):
     """获取截图地址消息"""
     type: MessageType = MessageType.D2S_DEVICE_CONTROL
     event: EventType = EventType.GET_SCREEN
 
-class DeviceInfoMessage(BaseMessage):
+class DeviceInfoMessage(DriftRequest):
     """设备信息消息"""
     type: MessageType = MessageType.D2S_NOTIFY
     event: EventType = EventType.DEVICE_INFO
     data: DeviceInfo
 
-class ControlMessage(BaseMessage):
+class ControlMessage(DriftRequest):
     """控制消息"""
     type: MessageType = MessageType.S2D_CONTROL
+'''
 
 # ================================== 云监视 ==================================
 
@@ -139,3 +141,4 @@ class MonitorResponse(BaseModel):
     info: str = Field("ok", description="状态信息")
     type: str = Field("", description="消息类型")
     data: Optional[Dict[str, Any]] = Field({}, description="数据")
+    

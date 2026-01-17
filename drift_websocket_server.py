@@ -47,15 +47,11 @@ async def handle_connection_message(
                 break
             # 接收消息
             message_data = await connectionManager.receive_message(device_id)
-            logger.debug(f"收到消息: {json.dumps(message_data, indent=2, ensure_ascii=False)}")
-            
             # 处理消息
             response = await handle_device_message(message_data, device_id)
-            
             # 发送响应
             if response:
                 await connectionManager.send_message(device_id, response)
-                logger.debug(f"发送响应: {json.dumps(response, indent=2, ensure_ascii=False)}")
     except Exception as e:
         logger.error(f"处理 WebSocket 时出错: {e}")
         await connectionManager.disconnect(

@@ -1,7 +1,7 @@
 import logging
 from typing import Optional
 from models import (
-    BaseMessage, EventType, MessageType, DeviceInfo
+    DriftMessage, DriftMessage, DriftEvent, DriftMsgType, DeviceInfo
 )
 from connection_manager import connectionManager
 from config import settings
@@ -17,17 +17,17 @@ async def handle_device_message(
     """处理设备消息"""
     try:
         # 验证消息格式
-        message = BaseMessage(**message_data)
+        message = DriftMessage(**message_data)
         
         # 根据消息类型处理
-        if message.type == MessageType.D2S_NOTIFY:
+        if message.type == DriftMsgType.D2S_NOTIFY:
             return await handle_notify_message(message, device_id)
-        elif message.type == MessageType.D2S_DEVICE_CONTROL:
+        elif message.type == DriftMsgType.D2S_DEVICE_CONTROL:
             return await handle_device_control(message, device_id)
         else:
             logger.warning(f"不支持的消息类型: {message.type}")
-            err_msg = BaseMessage(
-                type=MessageType.S2D_MESSAGE,
+            err_msg = DriftMessage(
+                type=DriftMsgType.S2D_MESSAGE,
                 event=message.event,
                 deviceId=message.deviceId,
                 playId=message.playId,
@@ -37,8 +37,8 @@ async def handle_device_message(
             
     except Exception as e:
         logger.error(f"处理消息时出错: {e}")
-        err_msg = BaseMessage(
-                type=MessageType.S2D_MESSAGE,
+        err_msg = DriftMessage(
+                type=DriftMsgType.S2D_MESSAGE,
                 event=message.event,
                 deviceId=message.deviceId,
                 playId=message.playId,
@@ -49,17 +49,17 @@ async def handle_device_message(
 
 # 处理 notify 类型消息
 async def handle_notify_message(
-    message: BaseMessage,
+    message: DriftMessage,
     device_id: str,
     ) -> Optional[dict]:
     # 更新心跳时间
     await connectionManager.update_heartbeat(device_id)
     
-    if message.event == EventType.JOIN:
+    if message.event == DriftEvent.JOIN:
         logger.debug(f"收到心跳: {device_id}")
-        return None  # 心跳不需要响应
+        return None  # 心跳不需要处理，也不需要响应
         
-    elif message.event == EventType.DEVICE_INFO:
+    elif message.event == DriftEvent.DEVICE_INFO:
         # 设备信息上报
         return await handle_device_info(
             message, device_id
@@ -76,28 +76,28 @@ async def handle_notify_message(
 
 # 处理 device_control 类型消息（设备主动请求）
 async def handle_device_control(
-    message: BaseMessage,
+    message: DriftMessage,
     device_id: str,
     ) -> Optional[dict]:
-    if message.event == EventType.GET_RTMP:
+    if message.event == DriftEvent.GET_RTMP:
         # 获取 RTMP 地址
         return await get_rtmp_address(
             message, device_id
         )
-    elif message.event == EventType.GET_SCREEN:
+    elif message.event == DriftEvent.GET_SCREEN:
         # 获取截图地址
         return await get_screen_address(
             message, device_id
         )
-    elif message.event == EventType.POWER_OFF:
+    elif message.event == DriftEvent.POWER_OFF:
         # 关机请求
         return await handle_power_off(
             message, device_id
         )
     else:
         logger.warning(f"未知的 device_control 事件: {message.event}")
-        err_msg = BaseMessage(
-            type=MessageType.S2D_MESSAGE,
+        err_msg = DriftMessage(
+            type=DriftMsgType.S2D_MESSAGE,
             event=message.event,
             deviceId=message.deviceId,
             playId=message.playId,
@@ -107,7 +107,7 @@ async def handle_device_control(
 
 # 上报设备信息（主动/被动）
 async def handle_device_info(
-    message: BaseMessage,
+    message: DriftMessage,
     device_id: str,
     ) -> dict:
     """处理设备信息上报"""
@@ -116,31 +116,14 @@ async def handle_device_info(
         device_info = DeviceInfo(**message.data)
         # 更新管理器中的设备信息
         connectionManager.update_device_info(device_id, device_info)
-        logger.info(f"设备信息更新: {device_id}")
-        # 响应消息
-        ret_msg = BaseMessage(
-            type=MessageType.S2D_DEVICE_NOTIFY,
-            event=message.event,
-            deviceId=message.deviceId,
-            playId=message.playId,
-            code=0,
-        )
-        return ret_msg.model_dump()
-        
+        logger.info(f"设备信息已更新: {device_id}")
     except Exception as e:
         logger.error(f"处理设备信息时出错: {e}")
-        ret_msg = BaseMessage(
-            type=MessageType.S2D_MESSAGE,
-            event=message.event,
-            deviceId=message.deviceId,
-            playId=message.playId,
-            code=-1,
-        )
-        return ret_msg.model_dump()
+    return None  # 通知类消息不需要响应
 
 # 处理获取 RTMP 地址请求
 async def get_rtmp_address(
-    message: BaseMessage,
+    message: DriftMessage,
     device_id: str
     ) -> dict:
     try:
@@ -151,8 +134,8 @@ async def get_rtmp_address(
         if not device_status:
             raise ValueError(f"设备 {device_id} 未连接")
         device_info = device_status.device_info
-        ret_msg = BaseMessage(
-            type=MessageType.S2D_DEVICE_NOTIFY,
+        ret_msg = DriftMessage(
+            type=DriftMsgType.S2D_DEVICE_NOTIFY,
             event=message.event,
             deviceId=message.deviceId,
             playId=message.playId,
@@ -167,8 +150,8 @@ async def get_rtmp_address(
         return ret_msg.model_dump()
     except Exception as e:
         logger.error(f"获取RTMP地址时出错: {e}")
-        ret_msg = BaseMessage(
-            type=MessageType.S2D_MESSAGE,
+        ret_msg = DriftMessage(
+            type=DriftMsgType.S2D_MESSAGE,
             event=message.event,
             deviceId=message.deviceId,
             playId=message.playId,
@@ -178,7 +161,7 @@ async def get_rtmp_address(
 
 # 获取截图上传地址请求（TODO：给一个真实的地址）
 async def get_screen_address(
-    message: BaseMessage,
+    message: DriftMessage,
     device_id: str
     ) -> dict:
     """处理获取截图地址请求"""
@@ -190,8 +173,8 @@ async def get_screen_address(
         # 这里应该返回实际的上传地址
         upload_url = f"https://{settings.host}/api/upload/screenshot"
         
-        ret_msg = BaseMessage(
-            type=MessageType.S2D_DEVICE_NOTIFY,
+        ret_msg = DriftMessage(
+            type=DriftMsgType.S2D_DEVICE_NOTIFY,
             event=message.event,
             deviceId=message.deviceId,
             playId=message.playId,
@@ -206,8 +189,8 @@ async def get_screen_address(
         return ret_msg.model_dump()
     except Exception as e:
         logger.error(f"生成截图地址时出错: {e}")
-        ret_msg = BaseMessage(
-            type=MessageType.S2D_MESSAGE,
+        ret_msg = DriftMessage(
+            type=DriftMsgType.S2D_MESSAGE,
             event=message.event,
             deviceId=message.deviceId,
             playId=message.playId,
@@ -217,7 +200,7 @@ async def get_screen_address(
 
 # 处理关机请求
 async def handle_power_off(
-    message: BaseMessage,
+    message: DriftMessage,
     device_id: str
     ) -> dict:
     try:
@@ -225,18 +208,17 @@ async def handle_power_off(
         # 关闭设备连接
         connectionManager.disconnect(device_id)
         
-        ret_msg = BaseMessage(
-            type=MessageType.S2D_DEVICE_NOTIFY,
+        ret_msg = DriftMessage(
+            type=DriftMsgType.S2D_DEVICE_NOTIFY,
             event=message.event,
             deviceId=message.deviceId,
             playId=message.playId,
-            code=0,
         )
         return ret_msg.model_dump()
     except Exception as e:
         logger.error(f"处理关机请求时出错: {e}")
-        err_msg = BaseMessage(
-            type=MessageType.S2D_MESSAGE,
+        err_msg = DriftMessage(
+            type=DriftMsgType.S2D_MESSAGE,
             event=message.event,
             deviceId=message.deviceId,
             playId=message.playId,

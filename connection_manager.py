@@ -3,14 +3,14 @@ import asyncio
 import logging
 from typing import Dict, Optional, List
 from urllib import request
-from utils import current_timestamp_s, generate_uuid
+from utils import current_timestamp_s
 from fastapi import WebSocket
 from fastapi.websockets import WebSocketState
 import redis.asyncio as redis
 from config import settings
-from models import DeviceInfo, BaseMessage
+from models import DeviceInfo, DriftMessage
 from models import (
-    EventType, MessageType, DeviceStatus
+    DriftEvent, DriftMsgType, DeviceStatus
 )
 
 
@@ -68,11 +68,11 @@ class ConnectionManager:
             timeout_devices = []
 
             for device_id in self._connections.keys():
-                request = BaseMessage(
-                    type=MessageType.S2D_CONTROL,
-                    event=EventType.DEVICE_INFO,
+                request = DriftMessage(
+                    type=DriftMsgType.S2D_CONTROL,
+                    event=DriftEvent.DEVICE_INFO,
                     deviceId=device_id,
-                    playId=generate_uuid(),
+                    playId=device_id,
                 )
                 await self.send_message(device_id, request.model_dump())
 
